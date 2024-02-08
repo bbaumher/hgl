@@ -1,0 +1,15 @@
+### R ###
+# History files
+.Rhistory
+.Rapp.history
+
+# Config
+config.yml
+
+# Input / output files
+# TODO: maybe keep these in the future, don't want PII
+*.csv
+
+# Random metadata
+.DS_Store
+.vscode/

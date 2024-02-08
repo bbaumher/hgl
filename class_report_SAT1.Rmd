@@ -1,0 +1,332 @@
+---
+title: "Class_report_SAT1"
+output: html_document
+date: "2023-10-24"
+---
+
+
+```{r global-options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r libraries}
+
+library(DT)
+library(knitr)
+library(tidyverse)
+library(kableExtra)
+library(ggstance)
+library(broom)
+library(lme4)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(ggalt)
+library(ggdist)
+library(hms)
+library(glue)
+library(hrbrthemes)
+library(htmltools)
+library(reactable)
+library(shiny)
+
+# setwd()
+
+full_comb <- read.csv("./full_comb.csv")
+
+full_comb <- full_comb %>% 
+  select(-X)
+
+raw_scaled <- read.csv("./Raw and Scaled Scores SAT Pretest.csv")
+
+student_info <- read.csv("./student_info.csv")
+```
+
+# Class Data {.tabset}
+## Number of Students Taking Initial Diagnostic
+
+```{r Averages}
+unique_emails <- unique(full_comb$User.email)
+count_unique_emails <- length(unique_emails)
+
+# cat("Number of students:", count_unique_emails)
+```
+Number of students in class: `r count_unique_emails`.
+
+## Distribution of time taken to complete test
+
+```{r Distribution of times taken to complete test}
+
+avg_time <- student_info %>% 
+  rename(Student.Name = V2, Student.email = V3, Date.Time.Start = V13, Date.Time.End = V14, Time = V15) %>% 
+  select(-X) %>% 
+  mutate(Time = as_hms(Time))
+
+avg_time$Time_minutes <- as.numeric(avg_time$Time, units = "mins")
+
+avg_time$Time_hours <- avg_time$Time_minutes/60
+
+dist <- avg_time %>% 
+  ggplot(aes(x = Time_hours)) +
+  geom_dotplot(binwidth = 1, fill = "#00AEEE", color = "#506171") +
+  labs(title = "Distribution of Time",
+       x = "Time (minutes)",
+       y = "Count")
+
+dist
+
+
+```
+
+## Average time taken to complete test
+
+```{r Avg Time take to finish diagnostic}
+
+Average_seconds <- avg_time %>% 
+  summarize(average_seconds = mean(Time))
+
+Average_time <- as_hms(Average_seconds$average_seconds)
+
+result_text <- glue("The average time to finish the test is {as.character(Average_time)}")
+cat(result_text)
+```
+
+## Class Score Ranges
+
+```{r Average Scaled Scores}
+#READING/WRITING RAW POINTS
+RWM1_data <- full_comb %>%
+  filter(Source == "RWM1")
+
+RWM1_rawscore <- data.frame(
+  Attribute = c("Raw Points"), 
+  Points = sum(RWM1_data$Point)
+  )
+
+RWM2_data <- full_comb %>%
+  filter(Source == "RWM2")
+
+RWM2_rawscore <- data.frame(
+  Attribute = c("Raw Points"), 
+  Points = sum(RWM2_data$Point)
+  )
+
+RWM_sum <- (sum(RWM1_rawscore$Points, RWM2_rawscore$Points))/count_unique_emails 
+
+#MATH RAW POINTS
+MM1_data <- full_comb %>%
+  filter(Source == "MM1")
+
+MM1_rawscore <- data.frame(
+  Attribute = c("Raw Points"),
+  Points = sum(MM1_data$Point)
+)
+
+MM2_data <- full_comb %>% 
+  filter(Source == "MM2")
+
+MM2_rawscore <- data.frame(
+  Attribute = c("Raw Points"), 
+  Points = sum(MM2_data$Point)
+)
+
+MM_sum <- (sum(MM1_rawscore$Points, MM2_rawscore$Points))/count_unique_emails
+
+#READING/WRITING: Convert R.W.Raw and R.W.Scale.Low to numeric
+raw_scaled$R.W.Raw <- as.numeric(raw_scaled$R.W.Raw)
+raw_scaled$R.W.Raw <- as.numeric(raw_scaled$R.W.Raw.1)
+raw_scaled$R.W.Scale.Low <- as.numeric(raw_scaled$R.W.Scale.Low)
+raw_scaled$R.W.Scale.High <- as.numeric(raw_scaled$R.W.Scale.High)
+
+###low range
+# Find the index of the closest value in R.W.Raw to RWM_sum
+index_RWM1 <- which.min(abs(raw_scaled$R.W.Raw - RWM_sum))
+# Retrieve the corresponding R.W.Scale.Low value
+RWM_low <- raw_scaled$R.W.Scale.Low[index_RWM1]
+
+### high range
+index_RWM2 <- which.min(abs(raw_scaled$R.W.Raw.1 - RWM_sum))
+
+RWM_high <- raw_scaled$R.W.Scale.High[index_RWM2]
+```
+
+```{r Math scaled scores}
+#MATH: Convert Math.Raw and Math.Scale.Low to numeric
+raw_scaled$Math.Raw <- as.numeric(raw_scaled$Math.Raw)
+raw_scaled$Math.Raw <- as.numeric(raw_scaled$Math.Raw.1)
+raw_scaled$Math.Scale.Low <- as.numeric(raw_scaled$Math.Scale.Low)
+raw_scaled$Math.Scale.High <- as.numeric(raw_scaled$Math.Scale.High)
+
+###low range
+# Find the index of the closest value in Math.Raw to MM_sum
+index_MM1 <- which.min(abs(raw_scaled$Math.Raw - MM_sum))
+# Retrieve the corresponding R.W.Scale.Low value
+MM_low <- raw_scaled$Math.Scale.Low[index_MM1]
+
+### high range
+index_MM2 <- which.min(abs(raw_scaled$Math.Raw.1 - MM_sum))
+
+MM_high <- raw_scaled$Math.Scale.High[index_MM2]
+```
+
+```{r Composite Scaled Scores}
+#COMPOSITE LOW AND HIGH
+comp_low <- sum(RWM_low, MM_low)
+comp_high <- sum(RWM_high, MM_high)
+
+#Score Range Table
+class_score_range <- data.frame(
+  "RW Low" = (RWM_low),
+  "RW High" = (RWM_high), 
+  "Math Low" = (MM_low),
+  "Math High" = (MM_high),
+  "Comp Low" = (comp_low),
+  "Comp High" = (comp_high)
+)
+
+class_score_range_table <- class_score_range %>% 
+  kbl(format = "html", escape = FALSE) %>% 
+  kable_styling(full_width = FALSE) %>% 
+  add_header_above(c("Class Scores Ranges" = 6)) %>% 
+  row_spec(0, background = "#00AEEE") %>% 
+   column_spec(2, border_right = TRUE) %>%  
+  column_spec(4, border_right = TRUE) %>%  
+  column_spec(6, border_right = TRUE) %>% 
+  column_spec(1, border_left = TRUE) %>% 
+  column_spec(1:6, width = "2cm", extra_css = "text-align: center; border-bottom: 2px solid black;")
+
+class_score_range_table
+```
+
+
+## Percent answer choices
+````{r drill down for student answer distribution}
+
+spr_responses <- full_comb %>% 
+  filter(!Student.Answer %in% c("A", "B", "C", "D"))
+
+ABCD_responses <- full_comb %>% 
+  filter(Student.Answer %in% c("A", "B", "C", "D"))
+
+ABCD_freq_table <- ABCD_responses %>% 
+pivot_wider(
+    names_from = Student.Answer,
+    values_from = Student.Answer,
+    values_fn = length,
+    values_fill = 0
+  ) %>%
+  group_by(Source, Question, Question.Domain, Correct.Answer) %>%
+  summarise(across(c("A", "B", "C", "D"), sum), .groups = "drop") %>%
+  rowwise() %>%
+  mutate(Total = sum(c(A, B, C, D))) %>%
+  mutate(across(c(A, B, C, D), ~ (. / Total)*100, .names = "Percent_{.col}"))
+
+ABCD_freq_table <- ABCD_freq_table %>% 
+  mutate(across(starts_with("Percent"), ~ paste0(round(.), "%"))) %>%
+  select(-c(A, B, C, D, Total))
+
+ABCD_freq_table <- ABCD_freq_table %>%
+  mutate(Bold_Column = case_when(
+    Correct.Answer == "A" ~ "Percent_A",
+    Correct.Answer == "B" ~ "Percent_B",
+    Correct.Answer == "C" ~ "Percent_C",
+    Correct.Answer == "D" ~ "Percent_D",
+    TRUE ~ NA_character_
+  ))
+
+# Define the columns for reactable with a dropdown filter
+columns_definition <- list(
+  Question = colDef(name = "Question", filterable = FALSE),
+  Correct.Answer = colDef(name = "Correct Answer", filterable = FALSE),
+  Percent_A = colDef(name = "Percent_A", filterable = FALSE),
+  Percent_B = colDef(name = "Percent_B", filterable = FALSE),
+  Percent_C = colDef(name = "Percent_C", filterable = FALSE),
+  Percent_D = colDef(name = "Percent_D", filterable = FALSE),
+  Question.Domain = colDef(
+    name = "Question Domain", 
+    filterable = TRUE)
+)
+
+percentage_columns <- names(ABCD_freq_table)[grepl("^Percent_", names(ABCD_freq_table))]
+
+for (percent_column in percentage_columns) {
+  columns_definition[[percent_column]] <- colDef(
+    name = percent_column,
+    style = function(value, index, name) {
+      # Check if this column is the one to bold and change text color
+      if (name == ABCD_freq_table$Bold_Column[index]) {
+        # Apply bold style and change text color when the condition is met
+        list(fontWeight = "bold", color = "#00AEEE")
+      } else {
+        list()  # No additional styling
+      }
+    }
+  )
+}
+
+ABCD_freq_table2 <- ABCD_freq_table %>% 
+  select(-Bold_Column)
+
+# Create the reactable
+reactable(
+  ABCD_freq_table2, 
+  columns = columns_definition,
+  minRows = 20, 
+  groupBy = "Source"
+)
+````
+
+## Questions where >=50% of students did not choose the correct answer
+````{r subset 50% or more}
+
+ABCD_freq_table1.2 <- ABCD_responses %>% 
+  pivot_wider(
+    names_from = Student.Answer,
+    values_from = Student.Answer,
+    values_fn = length,
+    values_fill = 0
+  ) %>%
+  group_by(Source, Question, Question.Domain, Correct.Answer) %>%
+  summarise(across(c("A", "B", "C", "D"), sum), .groups = "drop") %>%
+  rowwise() %>%
+  mutate(Total = sum(c(A, B, C, D))) %>%
+  mutate(across(c(A, B, C, D), ~ round((. / Total),2), .names = "Percent_{.col}"))
+
+ABCD_freq_table1.2 <- ABCD_freq_table1.2 %>% 
+  select(-c(A, B, C, D, Total))
+
+ABCD_freq_table1.2 <- ABCD_freq_table1.2 %>%
+  mutate(Bold_Column = case_when(
+    Correct.Answer == "A" ~ "Percent_A",
+    Correct.Answer == "B" ~ "Percent_B",
+    Correct.Answer == "C" ~ "Percent_C",
+    Correct.Answer == "D" ~ "Percent_D",
+    TRUE ~ NA_character_
+  ))
+
+# Filter rows where 50% or fewer of the students chose the correct response
+ABCD_freq_table_filtered <- ABCD_freq_table1.2 %>%
+  filter(get(Bold_Column) <= 0.50)
+
+# Now you can create the columns_definition
+columns_definition <- list(
+  Question = colDef(name = "Question", filterable = FALSE),
+  Correct.Answer = colDef(name = "Correct Answer", filterable = FALSE),
+  Question.Domain = colDef(name = "Question Domain", filterable = TRUE)
+)
+
+percentage_columns <- names(ABCD_freq_table_filtered)[grepl("^Percent_", names(ABCD_freq_table_filtered))]
+
+for (percent_column in percentage_columns) {
+  columns_definition[[percent_column]] <- colDef(
+    name = percent_column
+  )
+}
+
+reactable(
+  ABCD_freq_table_filtered, 
+  columns = columns_definition,
+  minRows = 20, 
+  groupBy = "Source"
+)
+````
