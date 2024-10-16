@@ -21,11 +21,13 @@ library(purrr)
 # setwd()
 
 #TODO: remove hard code of filename.
-Synap_raw <- read.csv("./sample_data/Synap_SAT_1.csv", header = FALSE, stringsAsFactors = FALSE)
+Synap_raw <- read.csv("./sample_data/sat_synap_test.csv", header = FALSE, stringsAsFactors = FALSE)
 
+# Hard coding columns?
 Synap_rename <- Synap_raw %>% 
   rename(RW1_1 = 34,RW1_2 = 35,RW1_3 = 36,RW1_4 = 37,RW1_5 = 38,RW1_6 = 39,RW1_7 = 40,RW1_8 = 41,RW1_9 = 42,RW1_10 = 43,RW1_11 = 44,RW1_12 = 45,RW1_13 = 46,RW1_14 = 47,RW1_15 = 48,RW1_16 = 49,RW1_17 = 50, RW1_18 = 51,RW1_19 = 52,RW1_20 = 53,RW1_21 = 54,RW1_22 = 55,RW1_23 = 56,RW1_24 = 57,RW1_25 = 58,RW1_26 = 59,RW1_27 = 60,RW2_1 = 61,RW2_2 = 62,RW2_3 = 63,RW2_4 = 64,RW2_5 = 65,RW2_6 = 66,RW2_7 = 67,RW2_8 = 68,RW2_9 = 69,RW2_10 = 70,RW2_11 = 71, RW2_12 = 72, RW2_13 = 73, RW2_14 = 74,RW2_15 = 75,RW2_16 = 76, RW2_17 = 77,RW2_18 = 78,RW2_19 = 79,RW2_20 = 80,RW2_21 = 81, RW2_22 = 82,RW2_23 = 83,RW2_24 = 84, RW2_25 = 85,RW2_26 = 86,RW2_27 = 87, M1_1 = 89, M1_2 = 90, M1_3 = 91, M1_4 = 92, M1_5 = 93, M1_6 = 94, M1_7 = 95, M1_8 = 96, M1_9 = 97, M1_10 = 98, M1_11 = 99, M1_12 = 100, M1_13 = 101, M1_14 = 102, M1_15 = 103, M1_16 = 104, M1_17 = 105, M1_18 = 106, M1_19 = 107, M1_20 = 108, M1_21 = 109, M1_22 = 110, M2_1 = 111, M2_2 = 112, M2_3 = 113, M2_4 = 114, M2_5 = 115, M2_6 = 116, M2_7 = 117, M2_8 = 118, M2_9 = 119, M2_10 = 120, M2_11 = 121, M2_12 = 122, M2_13 = 123, M2_14 = 124, M2_15 = 125, M2_16 = 126, M2_17 = 127, M2_18 = 128, M2_19 = 129, M2_20 = 130, M2_21 = 131, M2_22 = 132)
 
+# Removing Question specific meta data
 Synap_trim <- Synap_rename %>% 
   filter(!row_number() %in% c(1:7))
 

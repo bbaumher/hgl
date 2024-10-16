@@ -37,12 +37,12 @@ library(ggdist)
 
 setwd("Users/Downloads/rfiles/")
 
-full_comb <- read.csv("./full_comb.csv")
+full_comb <- read.csv("./Ouptput_Files/full_comb.csv")
 
 full_comb <- full_comb %>% 
   select(-X)
 
-raw_scaled <- read.csv("./Raw and Scaled Scores SAT Pretest.csv")
+raw_scaled <- read.csv("./Input_Files/Raw and Scaled Scores SAT Pretest.csv")
 ```
 
 
