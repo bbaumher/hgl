@@ -13,3 +13,13 @@ config.yml
 # Random metadata
 .DS_Store
 .vscode/
+
+
+# Python
+build/
+__pycache__/
+dist/
+
+#Project Specific
+sample_students.csv
+sample_test.csv
